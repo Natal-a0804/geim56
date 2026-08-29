@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Планеты в домах - Космическая миссия</title>
+    <style>
+        :root {
+            --game-bg: linear-gradient(135deg, #0a0e27 0%, #1a1a3e 50%, #0f0c29 100%);
+            --game-card: rgba(20, 25, 60, 0.85);
+            --game-primary: #6366f1;
+            --game-accent: #fbbf24;
+            --game-text: #e0e7ff;
+            --game-success: #10b981;
+            --game-error: #ef4444;
+            --game-muted: #64748b;
+            --game-neon-blue: #3b82f6;
+            --game-neon-purple: #a855f7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--game-bg);
+            color: var(--game-text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .planet {
+            position: fixed;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 20s infinite ease-in-out;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .planet-1 {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #fbbf24, #f59e0b);
+            top: 10%;
+            right: 10%;
+            box-shadow: 0 0 40px rgba(251, 191, 36, 0.5);
+        }
+
+        .planet-2 {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle at 30% 30%, #a855f7, #7c3aed);
+            bottom: 20%;
+            left: 5%;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(180deg); }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Стартовый экран */
+        .start-screen {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .title {
+            font-size: 3em;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, var(--game-accent), var(--game-neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            color: var(--game-muted);
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--game-primary), var(--game-neon-purple));
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: var(--game-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Карта уровней */
+        .level-map {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .level-card {
+            background: var(--game-card);
+            border: 2px solid var(--game-primary);
+            border-radius: 20px;
+            padding: 30px;
+            width: 200px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .level-card:hover:not(.locked) {
+            transform: translateY(-5px);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+        }
+
+        .level-card.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .level-card.locked::after {
+            content: '🔒';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 1.5em;
+        }
+
+        .level-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .level-name {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: var(--game-accent);
+        }
+
+        .level-stars {
+            font-size: 1.5em;
+            margin-top: 10px;
+        }
+
+        /* Игровой экран */
+        .game-header {
+            background: var(--game-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .progress-container {
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--game-primary), var(--game-accent));
+            width: 0%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95em;
+            color: var(--game-muted);
+        }
+
+        .timer {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--game-accent);
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .timer.warning {
+            color: var(--game-error);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .question-card {
+            background: var(--game-card);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);
+        }
+
+        .question-text {
+            font-size: 1.4em;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .answers {
+            display: grid;
+            gap: 15px;
+        }
+
+        .answer-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            color: var(--game-text);
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: 1.1em;
+            position: relative;
+        }
+
+        .answer-btn:hover:not(:disabled) {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--game-primary);
+            transform: translateX(5px);
+        }
+
+        .answer-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        .answer-btn.correct {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--game-success);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .answer-btn.correct::before {
+            content: '✓ ';
+            font-weight: bold;
+            color: var(--game-success);
+        }
+
+        .answer-btn.incorrect {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--game-error);
+            animation: shake 0.5s;
+        }
+
+        .answer-btn.incorrect::before {
+            content: '✗ ';
+            font-weight: bold;
+            color: var(--game-error);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .feedback {
+            background: var(--game-card);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 2px solid;
+            display: none;
+            animation: slideIn 0.3s;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            border-color: var(--game-success);
+        }
+
+        .feedback.incorrect {
+            border-color: var(--game-error);
+        }
+
+        .feedback-title {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .feedback-text {
+            line-height: 1.6;
+            color: var(--game-text);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .next-btn {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        /* Финальный экран */
+        .final-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .result-card {
+            background: var(--game-card);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            border: 2px solid var(--game-accent);
+            box-shadow: 0 0 40px rgba(251, 191, 36, 0.3);
+        }
+
+        .final-stars {
+            font-size: 4em;
+            margin: 20px 0;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--game-accent);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--game-muted);
+            font-size: 0.9em;
+        }
+
+        /* Конфетти */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--game-accent);
+            top: -10px;
+            z-index: 1000;
+            animation: confettiFall 3s linear;
+        }
+
+        @keyframes confettiFall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2em;
+            }
+            
+            .level-map {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .level-card {
+                width: 100%;
+                max-width: 250px;
+            }
+            
+            .question-text {
+                font-size: 1.2em;
+            }
+            
+            .answer-btn {
+                font-size: 1em;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="planet planet-1"></div>
+    <div class="planet planet-2"></div>
+
+    <div class="container">
+        <!-- Стартовый экран -->
+        <div class="screen start-screen active" id="startScreen">
+            <h1 class="title">🌟 Планеты в домах 🌟</h1>
+            <p class="subtitle">Космическая миссия по астрологии</p>
+            <button class="btn" onclick="initAudioAndStart()">Начать миссию</button>
+        </div>
+
+        <!-- Карта уровней -->
+        <div class="screen" id="levelMap">
+            <h2 style="text-align: center; margin-bottom: 30px; color: var(--game-accent);">Выберите уровень</h2>
+            <div class="level-map">
+                <div class="level-card" onclick="startLevel(1)">
+                    <div class="level-icon">🌙</div>
+                    <div class="level-name">Лёгкий</div>
+                    <div class="level-stars" id="level1Stars">☆☆☆</div>
+                </div>
+                <div class="level-card locked" id="level2Card" onclick="startLevel(2)">
+                    <div class="level-icon">⭐</div>
+                    <div class="level-name">Средний</div>
+                    <div class="level-stars" id="level2Stars">☆☆☆</div>
+                </div>
+                <div class="level-card locked" id="level3Card" onclick="startLevel(3)">
+                    <div class="level-icon">🌟</div>
+                    <div class="level-name">Сложный</div>
+                    <div class="level-stars" id="level3Stars">☆☆☆</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn" onclick="showStart()">Назад</button>
+            </div>
+        </div>
+
+        <!-- Игровой экран -->
+        <div class="screen" id="gameScreen">
+            <div class="game-header">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="game-stats">
+                        <span id="progressText">Задание 1 из 5</span>
+                        <span id="scoreText">Баллы: 0</span>
+                    </div>
+                    <div class="game-stats" style="margin-top: 10px;">
+                        <span id="completedText">Выполнено: 0</span>
+                        <span id="remainingText">Осталось: 5</span>
+                    </div>
+                </div>
+                <div class="timer" id="timer">60</div>
+            </div>
+
+            <div class="question-card">
+                <div class="question-text" id="questionText"></div>
+                <div class="answers" id="answers"></div>
+                <div class="feedback" id="feedback">
+                    <div class="feedback-title" id="feedbackTitle"></div>
+                    <div class="feedback-text" id="feedbackText"></div>
+                </div>
+                <button class="btn next-btn" id="nextBtn" onclick="nextQuestion()" disabled>Дальше</button>
+            </div>
+        </div>
+
+        <!-- Финальный экран -->
+        <div class="screen final-screen" id="finalScreen">
+            <h2 style="color: var(--game-accent); margin-bottom: 20px;">Миссия завершена!</h2>
+            <div class="result-card">
+                <div class="final-stars" id="finalStars"></div>
+                <div class="result-stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="correctCount">0</div>
+                        <div class="stat-label">Верных ответов</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="incorrectCount">0</div>
+                        <div class="stat-label">Ошибок</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="totalScore">0</div>
+                        <div class="stat-label">Общий результат</div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn" onclick="showLevelMap()">К карте уровней</button>
+            <button class="btn" style="margin-top: 15px;" onclick="restartLevel()">Играть снова</button>
+        </div>
+    </div>
+
+    <script>
+        // Создание звёзд
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = Math.random() * 3 + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        createStars();
+
+        // Аудио контекст инициализируется при первом клике
+        let audioContext = null;
+        let speechSynthesis = window.speechSynthesis;
+        let russianVoice = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // Загрузка русского голоса
+            if (speechSynthesis) {
+                const voices = speechSynthesis.getVoices();
+                russianVoice = voices.find(voice => voice.lang.startsWith('ru'));
+                
+                // Если голоса ещё не загрузились, ждём
+                if (voices.length === 0) {
+                    speechSynthesis.onvoiceschanged = function() {
+                        const updatedVoices = speechSynthesis.getVoices();
+                        russianVoice = updatedVoices.find(voice => voice.lang.startsWith('ru'));
+                    };
+                }
+            }
+        }
+
+        function initAudioAndStart() {
+            initAudio();
+            showLevelMap();
+            speak("Добро пожаловать в космическую миссию! Выберите уровень сложности.");
+        }
+
+        // Озвучка текста
+        function speak(text) {
+            if (!speechSynthesis) return;
+            
+            // Отменяем предыдущую озвучку
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ru-RU';
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            utterance.volume = 1;
+            
+            if (russianVoice) {
+                utterance.voice = russianVoice;
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        // Звуковые эффекты
+        function playSound(type) {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            if (type === 'correct') {
+                // Приятный аккорд
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+                oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+                oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } else if (type === 'incorrect') {
+                // Мягкий звук ошибки
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(220, audioContext.currentTime); // A3
+                oscillator.frequency.setValueAtTime(196, audioContext.currentTime + 0.15); // G3
+                
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            }
+        }
+
+        // Вопросы по уровням
+        const questions = {
+            1: [
+                {
+                    question: "Какая планета управляет знаком Овен (1 дом)?",
+                    answers: ["Марс", "Венера", "Юпитер", "Сатурн"],
+                    correct: 0,
+                    explanation: "Марс является управителем Овна. Это планета энергии, действия и инициативы."
+                },
+                {
+                    question: "Что символизирует 7 дом в астрологии?",
+                    answers: ["Брак и партнёрство", "Карьера", "Дети", "Финансы"],
+                    correct: 0,
+                    explanation: "7 дом отвечает за брак, партнёрство и открытые враги. Это дом отношений с другими людьми."
+                },
+                {
+                    question: "Какая планета экзальтирует в Тельце (2 дом)?",
+                    answers: ["Венера", "Луна", "Солнце", "Меркурий"],
+                    correct: 0,
+                    explanation: "Венера экзальтирует в Тельце. Венера — управитель Тельца, и здесь она находится в своём максимальном достоинстве."
+                },
+                {
+                    question: "Какой дом отвечает за карьеру и репутацию?",
+                    answers: ["10 дом", "2 дом", "6 дом", "8 дом"],
+                    correct: 0,
+                    explanation: "10 дом (MC) — это дом карьеры, социального статуса и репутации в обществе."
+                },
+                {
+                    question: "Какая планета является управителем Льва (5 дом)?",
+                    answers: ["Солнце", "Марс", "Юпитер", "Венера"],
+                    correct: 0,
+                    explanation: "Солнце управляет Львом. Это планета эго, творческого самовыражения и жизненной силы."
+                }
+            ],
+            2: [
+                {
+                    question: "Какая планета управляет Водолеем (11 дом) в современной астрологии?",
+                    answers: ["Уран", "Сатурн", "Нептун", "Плутон"],
+                    correct: 0,
+                    explanation: "Уран является современным управителем Водолея. Сатурн — традиционный управитель."
+                },
+                {
+                    question: "Что символизирует 8 дом в астрологии?",
+                    answers: ["Трансформация, кризисы, наследство", "Путешеств
